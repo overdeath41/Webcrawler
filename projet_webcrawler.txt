@@ -1,3 +1,10 @@
+Prompt IA : 
+Aujourd'hui tu es mon assistant, tu es un génie de l'informatique avec plus de 150 de QI, 
+tu connais toutes les ficelles du métier tu sais également tout sur la création d'entreprise et tu es là pour m'aider, 
+je suis actuellement étudiant en BTS SIO SISR en alternance dans une grande entreprise
+
+
+
 =========================================
 PLAN DE DÉVELOPPEMENT - PROJET SAAS WEBCRAWLER NO-CODE
 =========================================
@@ -37,7 +44,7 @@ Objectif :
 Tâches :
 1. Créer le projet Django :
    django-admin startproject webcrawler_saas
-2. Créer l’app principale :
+2. Créer l'app principale :
    python manage.py startapp crawler
 3. Configurer la base de données (SQLite pour début, PostgreSQL ensuite).
 4. Créer les modèles :
@@ -106,12 +113,15 @@ Tâches :
    - Scrapy (worker)
    - Redis (broker Celery)
    - PostgreSQL (base)
-2. Déployer sur un VPS (OVH, Scaleway, Hetzner…)
+2. Déployer sur un VPS :
+   - VPS-2 (7,14€/mois) pour ≤30 utilisateurs
+   - VPS-6 (50€/mois) si >30 utilisateurs ou crawls lourds
 3. Ajouter :
    - Monitoring (Healthchecks.io, UptimeRobot)
    - Logs centralisés
 4. Stockage fichiers :
-   - Local, puis S3/MinIO plus tard
+   - Local sur VPS pour MVP
+   - Option future : S3/MinIO si volume important
 5. (Optionnel) Intégrer Stripe pour paiements automatiques.
 
 Livrables :
@@ -143,6 +153,24 @@ Livrables :
 - Première version stable publique
 
 -----------------------------------------
+PHASE 7 - GESTION DES COÛTS ET RENTABILITÉ
+-----------------------------------------
+Objectif :
+- Prévoir les coûts fixes et marges nettes pour le SaaS.
+
+Éléments à prendre en compte :
+1. VPS-2 pour ≤30 utilisateurs, VPS-6 pour >30 utilisateurs (Service VPS d'OVH)
+2. Site web OVH : ≈10€/mois
+3. Stockage et backup : ≈5€/mois
+4. Charges sociales autoentrepreneur : 22% du CA
+5. Limite autoentrepreneur : 77 700€/an → avec abonnement 80€/mois, max ≈80 utilisateurs
+
+Estimation bénéfice net annuel selon utilisateurs et VPS :
+- 10 utilisateurs : ~7 044€/an (~587€/mois)
+- 30 utilisateurs : ~22 020€/an (~1 835€/mois)
+- 50 utilisateurs : ~36 480€/an (~3 040€/mois)
+
+-----------------------------------------
 ANNEXE - STRUCTURE DU PROJET (RÉSUMÉ)
 -----------------------------------------
 webcrawler_saas/
@@ -172,8 +200,116 @@ SUGGESTIONS TECHNIQUES
 - Docker Compose
 - Stripe (paiement, optionnel)
 - HTMX ou React léger pour front
-- Hébergement : VPS ou Scaleway Elements
+- Hébergement : VPS-2 ou VPS-6 selon charge et nombre d’utilisateurs
+- Monitoring Healthchecks.io / UptimeRobot
+- Stockage futur : S3/MinIO
 
 =========================================
 FIN DU PLAN
+=========================================
+
+=========================================
+PLANNING SEMAINE PAR SEMAINE - MVP WEBCRAWLER
+=========================================
+
+-----------------------------------------
+Semaine 1 (12/11 – 18/11)
+-----------------------------------------
+- Définir cas d’usage concret (ex : extraction prix e-commerce)
+- Lister fonctionnalités minimales du MVP
+- Définir données à extraire (titre, prix, lien, stock)
+- Esquisser maquette rapide de l’interface (papier ou Figma simple)
+- Préparer spécifications fonctionnelles MVP.txt
+
+-----------------------------------------
+Semaine 2 (19/11 – 25/11)
+-----------------------------------------
+- Créer projet Django : django-admin startproject webcrawler_saas
+- Créer l’app principale : python manage.py startapp crawler
+- Configurer la base de données SQLite pour début
+- Définir modèles Django : User, CrawlTask
+- Créer superadmin et tester admin Django
+
+-----------------------------------------
+Semaine 3 (26/11 – 02/12)
+-----------------------------------------
+- Créer vues/API CRUD pour CrawlTask (Django Rest Framework)
+    - POST /task/ pour créer une tâche
+    - GET /task/{id}/ pour statut + lien téléchargement
+- Tester API avec Postman ou curl
+- Créer template HTML minimal pour test interface
+
+-----------------------------------------
+Semaine 4 (03/12 – 09/12)
+-----------------------------------------
+- Créer projet Scrapy : scrapy startproject corecrawler
+- Créer spider simple BasicSpider (URL en argument)
+- Tester crawl sur sites de test en local
+- Stocker résultats CSV localement
+
+-----------------------------------------
+Semaine 5 (10/12 – 16/12)
+-----------------------------------------
+- Installer et configurer Celery + Redis
+- Connecter Django → Celery → Scrapy
+    - Quand tâche créée → Celery lance crawl
+    - Scrapy génère CSV → Django met à jour statut
+- Tester exécution asynchrone des tâches
+
+-----------------------------------------
+Semaine 6 (17/12 – 23/12)
+-----------------------------------------
+- Interface web : formulaire ajout URL
+- Liste des tâches + statut
+- Bouton téléchargement CSV
+- Feedback utilisateur simple : affichage statut ou barre progression
+
+-----------------------------------------
+Semaine 7 (24/12 – 30/12)
+-----------------------------------------
+- Ajouter support “sélecteurs CSS dynamiques” pour extraction no-code light
+- Adapter spider pour lire sélecteurs stockés en base
+- Test complet crawl avec sélecteurs personnalisés
+
+-----------------------------------------
+Semaine 8 (31/12 – 06/01)
+-----------------------------------------
+- Conteneuriser application avec Docker Compose
+    - Django (web)
+    - Scrapy (worker)
+    - Redis (broker Celery)
+    - PostgreSQL (si besoin)
+- Préparer script de déploiement sur VPS-2
+
+-----------------------------------------
+Semaine 9 (07/01 – 13/01)
+-----------------------------------------
+- Déployer MVP sur VPS-2
+- Vérifier exécution tâches crawl à distance
+- Vérifier téléchargement fichiers CSV
+- Configurer monitoring minimal (scripts, Healthchecks)
+
+-----------------------------------------
+Semaine 10 (14/01 – 20/01)
+-----------------------------------------
+- Test complet par toi + 2-3 early testers
+- Collecte premiers retours
+- Correction bugs critiques et ajustements interface
+
+-----------------------------------------
+Semaine 11 (21/01 – 27/01)
+-----------------------------------------
+- Finalisation interface et feedbacks
+- Préparer communication lancement early adopters
+- Mettre en place formulaire contact / support utilisateur
+
+-----------------------------------------
+Semaine 12 (28/01 – 03/02)
+-----------------------------------------
+- Préparer tarification early adopter
+- Vérification stabilité serveur et fichiers CSV
+- Lancement officiel du MVP pour premiers utilisateurs payants
+
+=========================================
+FIN DU PLANNING
 =========================================
