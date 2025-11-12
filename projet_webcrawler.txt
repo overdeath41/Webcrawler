@@ -1,0 +1,179 @@
+=========================================
+PLAN DE DÉVELOPPEMENT - PROJET SAAS WEBCRAWLER NO-CODE
+=========================================
+
+Auteur : Thumser Luc
+Date de début : 12/11/2025
+Technos principales : Django, Scrapy, Celery, Redis, PostgreSQL, Docker
+Objectif : Créer un MVP de SaaS de webcrawler simple et automatisé, avec interface web et résultats téléchargeables.
+
+-----------------------------------------
+PHASE 1 - DÉFINITION DU MVP
+-----------------------------------------
+Objectif :
+- Définir la fonctionnalité minimale utile à un utilisateur (MVP).
+- Identifier la cible (type d’utilisateur, usage concret).
+
+Tâches :
+1. Définir le cas d’usage concret (ex: extraire les prix d’un site e-commerce).
+2. Définir les fonctionnalités minimales :
+   - Création de compte utilisateur
+   - Ajout d’une URL à crawler
+   - Lancement d’une tâche de crawl
+   - Téléchargement du résultat (CSV)
+3. Lister les données à extraire (ex: titre, prix, stock, lien).
+
+Livrables :
+- Spécification fonctionnelle simple (MVP.txt)
+- Liste des endpoints/API à prévoir
+- Maquette rapide de l’interface (papier ou Figma)
+
+-----------------------------------------
+PHASE 2 - BASE DJANGO
+-----------------------------------------
+Objectif :
+- Poser les fondations du backend SaaS (auth, modèles, vues, API).
+
+Tâches :
+1. Créer le projet Django :
+   django-admin startproject webcrawler_saas
+2. Créer l’app principale :
+   python manage.py startapp crawler
+3. Configurer la base de données (SQLite pour début, PostgreSQL ensuite).
+4. Créer les modèles :
+   - User (auth Django)
+   - CrawlTask (user, url, status, result_file, created_at)
+5. Créer les vues/API :
+   - POST /task/ (créer une tâche)
+   - GET /task/{id}/ (statut + lien de téléchargement)
+6. Créer un template HTML minimal ou API JSON (via Django Rest Framework).
+
+Livrables :
+- Projet Django fonctionnel avec CRUD de tâches
+- Admin Django opérationnel
+
+-----------------------------------------
+PHASE 3 - INTÉGRATION DE SCRAPY
+-----------------------------------------
+Objectif :
+- Intégrer un moteur de crawling fonctionnel avec Django.
+
+Tâches :
+1. Créer un projet Scrapy séparé :
+   scrapy startproject corecrawler
+2. Créer un spider simple (BasicSpider) qui prend une URL en argument.
+3. Tester manuellement le spider sur des sites de test.
+4. Ajouter Celery + Redis pour exécuter Scrapy en tâche asynchrone.
+5. Connecter Django → Celery → Scrapy :
+   - Quand une tâche est créée, Celery lance le crawl
+   - Scrapy stocke le résultat dans un fichier CSV
+   - Django met à jour le statut à "done" et ajoute le lien du fichier
+
+Livrables :
+- Crawl fonctionnel via interface Django
+- Résultat téléchargeable
+
+-----------------------------------------
+PHASE 4 - AMÉLIORATION UX / NO-CODE
+-----------------------------------------
+Objectif :
+- Rendre le système utilisable sans compétence technique.
+
+Tâches :
+1. Créer une interface web simple :
+   - Formulaire d’ajout d’URL
+   - Liste des tâches + statut
+   - Bouton “Télécharger résultat”
+2. Ajouter la possibilité de définir des sélecteurs CSS (no-code light)
+   - Exemple : utilisateur saisit “.product-title” et “.price”
+   - Sauvegarde dans la base
+3. Adapter le spider pour lire les sélecteurs dynamiques.
+4. Ajouter feedback utilisateur (progress bar ou statut visible).
+
+Livrables :
+- Interface simple utilisable par un utilisateur lambda
+- Extraction paramétrable (semi no-code)
+
+-----------------------------------------
+PHASE 5 - AUTOMATISATION ET DÉPLOIEMENT
+-----------------------------------------
+Objectif :
+- Rendre le service accessible en ligne, stable et automatisé.
+
+Tâches :
+1. Conteneuriser l’application avec Docker :
+   - Django (web)
+   - Scrapy (worker)
+   - Redis (broker Celery)
+   - PostgreSQL (base)
+2. Déployer sur un VPS (OVH, Scaleway, Hetzner…)
+3. Ajouter :
+   - Monitoring (Healthchecks.io, UptimeRobot)
+   - Logs centralisés
+4. Stockage fichiers :
+   - Local, puis S3/MinIO plus tard
+5. (Optionnel) Intégrer Stripe pour paiements automatiques.
+
+Livrables :
+- Application en ligne
+- Tâches exécutées automatiquement
+- Monitoring opérationnel
+
+-----------------------------------------
+PHASE 6 - VALIDATION ET ÉVOLUTION
+-----------------------------------------
+Objectif :
+- Tester la valeur du produit et recueillir des retours.
+
+Tâches :
+1. Faire tester le MVP par quelques utilisateurs (amis, collègues, pros).
+2. Collecter les feedbacks :
+   - Difficultés d’utilisation
+   - Bugs rencontrés
+   - Attentes d’évolution
+3. Identifier les pistes d’amélioration (v2) :
+   - Interface plus visuelle
+   - Support multi-sites
+   - Gestion de planifications automatiques
+   - Export JSON/Google Sheets
+
+Livrables :
+- Rapport de tests utilisateurs
+- Liste d’améliorations (Roadmap v2)
+- Première version stable publique
+
+-----------------------------------------
+ANNEXE - STRUCTURE DU PROJET (RÉSUMÉ)
+-----------------------------------------
+webcrawler_saas/
+├── manage.py
+├── webcrawler_saas/
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── crawler/
+│   ├── models.py
+│   ├── views.py
+│   ├── tasks.py (Celery)
+│   └── templates/
+└── corecrawler/ (Scrapy)
+    ├── spiders/
+    ├── pipelines.py
+    └── settings.py
+
+-----------------------------------------
+SUGGESTIONS TECHNIQUES
+-----------------------------------------
+- Django 5.x
+- Django Rest Framework
+- Scrapy 2.x ou 3.x
+- Celery + Redis
+- PostgreSQL ou SQLite
+- Docker Compose
+- Stripe (paiement, optionnel)
+- HTMX ou React léger pour front
+- Hébergement : VPS ou Scaleway Elements
+
+=========================================
+FIN DU PLAN
+=========================================
