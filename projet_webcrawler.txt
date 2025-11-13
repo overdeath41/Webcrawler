@@ -1,8 +1,7 @@
 Prompt IA : 
 Aujourd'hui tu es mon assistant, tu es un génie de l'informatique avec plus de 150 de QI, 
 tu connais toutes les ficelles du métier tu sais également tout sur la création d'entreprise et tu es là pour m'aider, 
-je suis actuellement étudiant en BTS SIO SISR en alternance dans une grande entreprise
-
+je suis actuellement étudiant en BTS SIO SISR en alternance dans une grande entreprise en première année
 
 
 =========================================
@@ -13,6 +12,50 @@ Auteur : Thumser Luc
 Date de début : 12/11/2025
 Technos principales : Django, Scrapy, Celery, Redis, PostgreSQL, Docker
 Objectif : Créer un MVP de SaaS de webcrawler simple et automatisé, avec interface web et résultats téléchargeables.
+
+-----------------------------------------
+PHASE 0 - ASPECTS LÉGAUX ET ÉTHIQUES
+-----------------------------------------
+
+Objectif :
+Garantir la conformité légale du service dès la conception, 
+tout en protégeant l’utilisateur et le développeur de toute responsabilité liée à l’utilisation du webcrawler.
+
+Principes fondamentaux :
+
+Responsabilité de l’utilisateur :
+Chaque utilisateur est pleinement responsable des URLs qu’il soumet à la plateforme.
+Le service ne doit en aucun cas être utilisé pour extraire des données privées, protégées, ou contraires aux CGU d’un site tiers.
+Une clause spécifique dans les Conditions Générales d’Utilisation (CGU) précisera que toute utilisation abusive, 
+illégale ou contraire à la législation en vigueur relève exclusivement de la responsabilité de l’utilisateur.
+
+Conformité RGPD (Règlement Général sur la Protection des Données) :
+Aucune donnée personnelle n’est collectée ou traitée sans consentement explicite.
+Les comptes utilisateurs sont limités à un strict minimum de données (email, mot de passe).
+Les fichiers résultant des crawls ne sont pas analysés, 
+exploités ni conservés par la plateforme au-delà de la durée strictement nécessaire au téléchargement par l’utilisateur.
+L’utilisateur reste seul propriétaire de ses données et de ses résultats.
+
+Prévention des abus et sécurité :
+Mise en place de limites techniques (taux de requêtes, domaine crawlable, fréquence) 
+pour éviter toute surcharge ou attaque involontaire sur des sites externes.
+Politique “robots.txt respectée par défaut” pour éviter tout comportement non éthique.
+Les crawlers sont exécutés dans un environnement isolé (conteneurs Docker) 
+afin de garantir la sécurité du serveur et des utilisateurs.
+
+Mentions légales et transparence :
+Une page “Mentions légales” et “Politique de confidentialité” sera disponible sur le site, 
+détaillant les responsabilités, 
+les finalités de traitement et les droits des utilisateurs (accès, suppression, portabilité).
+Aucune revente, partage ou exploitation des données utilisateurs ne sera effectuée, 
+ni à des tiers ni à des fins commerciales externes.
+
+Livrables :
+CGU / Politique de confidentialité / Mentions légales (v1)
+Processus de consentement RGPD
+Page d’information “Utilisation responsable du webcrawler”
+Mise en place de limites anti-abus (niveau serveur ou applicatif)
+
 
 -----------------------------------------
 PHASE 1 - DÉFINITION DU MVP
@@ -34,6 +77,33 @@ Livrables :
 - Spécification fonctionnelle simple (MVP.txt)
 - Liste des endpoints/API à prévoir
 - Maquette rapide de l’interface (papier ou Figma)
+
+-----------------------------------------
+PHASE 1B - POSITIONNEMENT ET VALEURS DU PRODUIT
+-----------------------------------------
+
+Objectif :
+Définir le positionnement du SaaS : un outil no-code, français et éthique, accessible aux non-développeurs.
+
+Principes :
+
+Public cible :
+Utilisateurs non techniques (auto-entrepreneurs, e-commerçants, analystes, marketeurs).
+Interface intuitive : formulaire simple et interactions visuelles sans code.
+
+Valeurs :
+Projet français, transparent et respectueux des données.
+Aucune revente ou exploitation des informations utilisateurs.
+Hébergement en France (OVH) pour garantir conformité RGPD et souveraineté.
+Modèle d’abonnement clair, sans collecte cachée.
+
+Promesse produit :
+“Un webcrawler français, simple et éthique — accessible à tous, sans coder et sans espionner.”
+
+Livrables :
+Persona principal (“utilisateur no-code français”)
+Maquette d’interface simplifiée
+Charte éthique du produit
 
 -----------------------------------------
 PHASE 2 - BASE DJANGO
@@ -162,13 +232,14 @@ Objectif :
 1. VPS-2 pour ≤30 utilisateurs, VPS-6 pour >30 utilisateurs (Service VPS d'OVH)
 2. Site web OVH : ≈10€/mois
 3. Stockage et backup : ≈5€/mois
-4. Charges sociales autoentrepreneur : 22% du CA
-5. Limite autoentrepreneur : 77 700€/an → avec abonnement 80€/mois, max ≈80 utilisateurs
+4. Charges sociales autoentrepreneur : 22% du CA*
+5. types d'abonnement, gratuit -> 3crawl/mois (version d'essai),offre 40 euros par mois les 3 premiers mois puis, offre 50 euros par mois pour crawl illimité.
+5. Limite autoentrepreneur : 77 700€/an → avec abonnement 50€/mois, max ≈129 utilisateurs
 
 Estimation bénéfice net annuel selon utilisateurs et VPS :
-- 10 utilisateurs : ~7 044€/an (~587€/mois)
-- 30 utilisateurs : ~22 020€/an (~1 835€/mois)
-- 50 utilisateurs : ~36 480€/an (~3 040€/mois)
+- 10 utilisateurs : ~4 416 €/an (~368 €/mois)
+- 30 utilisateurs : ~13 776 €/an (~1 148 €mois)
+- 50 utilisateurs : ~22 620 €/an (~1 885 €/mois)
 
 -----------------------------------------
 ANNEXE - STRUCTURE DU PROJET (RÉSUMÉ)
