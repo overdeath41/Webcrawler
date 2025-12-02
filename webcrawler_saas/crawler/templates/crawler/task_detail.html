@@ -168,10 +168,12 @@
 {% block extra_js %}
 <script>
     // Auto-refresh si la tâche est en cours
-    {% if task.status == 'running' or task.status == 'pending' %}
+
+    /* {% if task.status in ('running', 'pending') %} */
     setTimeout(function() {
         location.reload();
     }, 5000);
-    {% endif %}
+    /* {% endif %} */
 </script>
+
 {% endblock %}

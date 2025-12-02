@@ -144,10 +144,11 @@
 {% block extra_js %}
 <script>
     // Auto-refresh toutes les 10 secondes si des tâches sont en cours
-    {% if running_count > 0 or pending_count > 0 %}
+    
+    /* {% if running_count > 0 or pending_count > 0 %} */
     setTimeout(function() {
         location.reload();
     }, 10000);
-    {% endif %}
+    /* {% endif %} */
 </script>
 {% endblock %}
