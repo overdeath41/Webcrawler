@@ -1,21 +1,25 @@
-# Django et API
-Django==5.1.3
-djangorestframework==3.14.0
-django-cors-headers==4.3.1
+# Fichier de dépendances unique du projet (utilisé par le Dockerfile).
+# Versions épinglées et testées ensemble — Python 3.12.
 
-# Celery et Redis
-celery==5.3.4
-redis==5.0.1
+# Web
+Django==5.2.17                 # LTS, supportée jusqu'en avril 2028
+djangorestframework==3.16.1
+whitenoise==6.12.0             # sert /static/ directement depuis Gunicorn
+gunicorn==23.0.0
+Markdown==3.11                 # rendu des pages légales (CGU, confidentialité...)
 
-# Scrapy
-Scrapy==2.11.0
+# Tâches asynchrones
+celery[redis]==5.6.3
+redis==6.4.0
+
+# Crawl
+Scrapy==2.19.0
 
 # Base de données
-psycopg2-binary==2.9.9
+psycopg[binary]==3.3.6
+
+# Sécurité
+argon2-cffi==25.1.0
 
 # Utilitaires
-python-dotenv==1.0.0
-requests==2.31.0
-
-# Pour le développement
-django-extensions==3.2.3
+python-dotenv==1.2.3

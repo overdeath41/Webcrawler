@@ -1,30 +1,27 @@
+# Image unique pour les services web, worker et beat.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-WORKDIR /app
+WORKDIR /app/webcrawler_saas
 
-# Dépendances système (compilation lxml/Twisted/psycopg le cas échéant)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
-        libxml2-dev \
-        libxslt1-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
+# Toutes les dépendances ont des wheels précompilées : pas de compilateur.
+COPY webcrawler_saas/requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY docker/ /app/docker/
+COPY webcrawler_saas/ ./
 
-# Scripts d'entrée exécutables + utilisateur non-root
-RUN chmod +x docker/entrypoint.web.sh docker/entrypoint.worker.sh \
-    && useradd --create-home appuser \
-    && mkdir -p /app/staticfiles /app/media \
+# Statiques collectés à la construction (servis par WhiteNoise)
+RUN SECRET_KEY=build-only DEBUG=False python manage.py collectstatic --noinput -v 0
+
+RUN chmod +x /app/docker/*.sh \
+    && useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/webcrawler_saas/media \
     && chown -R appuser:appuser /app
 
 USER appuser
-
 EXPOSE 8000

@@ -1,26 +1,22 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.Python
+venv/
+.venv/
 
 # Django
 *.sqlite3
+webcrawler_saas/media/
+webcrawler_saas/staticfiles/
 *.log
-local_settings.py
-db.sqlite3
-media/
 
-# Environment
+# Scrapy
+.scrapy/
+
+# Environnement
 .env
 .env.*
 !.env.example
-venv/
-env/
-.venv/
-
-# Docker
 *.override.yml
 
 # OS

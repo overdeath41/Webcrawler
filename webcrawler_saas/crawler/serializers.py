@@ -1,71 +1,45 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.urls import reverse
 from rest_framework import serializers
-from django.conf import settings
+
 from .models import CrawlTask
+from .validators import validate_url_list
+
 
 class CrawlTaskSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
     urls_list = serializers.SerializerMethodField()
-    
+    progress = serializers.IntegerField(source="progress_percent", read_only=True)
+    download_url = serializers.SerializerMethodField()
+
     class Meta:
         model = CrawlTask
         fields = [
-            'id', 'user', 'urls', 'urls_list', 'status', 
-            'result_file', 'error_message', 'created_at', 
-            'updated_at', 'completed_at', 'urls_count', 
-            'items_scraped', 'celery_task_id'
+            "id", "name", "urls_list", "status", "progress", "urls_count", "urls_done",
+            "urls_failed", "items_scraped", "error_message", "download_url",
+            "created_at", "started_at", "completed_at",
         ]
-        read_only_fields = [
-            'status', 'result_file', 'error_message', 
-            'created_at', 'updated_at', 'completed_at', 
-            'urls_count', 'items_scraped', 'celery_task_id'
-        ]
-    
+        read_only_fields = fields
+
     def get_urls_list(self, obj):
         return obj.get_urls_list()
-    
-    def validate_urls(self, value):
-        """Valide le format et le nombre d'URLs"""
-        task = CrawlTask(urls=value)
-        urls_list = task.get_urls_list()
-        
-        if not urls_list:
-            raise serializers.ValidationError("Au moins une URL est requise")
-        
-        if len(urls_list) > settings.MAX_URLS_PER_TASK:
-            raise serializers.ValidationError(
-                f"Maximum {settings.MAX_URLS_PER_TASK} URLs autorisées"
-            )
-        
-        # Validation basique du format URL
-        from django.core.validators import URLValidator
-        from django.core.exceptions import ValidationError as DjangoValidationError
-        
-        validator = URLValidator()
-        for url in urls_list:
-            try:
-                validator(url)
-            except DjangoValidationError:
-                raise serializers.ValidationError(f"URL invalide: {url}")
-        
-        return value
+
+    def get_download_url(self, obj):
+        if not obj.result_file:
+            return None
+        url = reverse("task-download", args=[obj.pk])
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request else url
 
 
 class CrawlTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CrawlTask
-        fields = ['urls']
-    
+        fields = ["id", "name", "urls"]
+        read_only_fields = ["id"]
+
     def validate_urls(self, value):
-        """Valide le format et le nombre d'URLs"""
-        task = CrawlTask(urls=value)
-        urls_list = task.get_urls_list()
-        
-        if not urls_list:
-            raise serializers.ValidationError("Au moins une URL est requise")
-        
-        if len(urls_list) > settings.MAX_URLS_PER_TASK:
-            raise serializers.ValidationError(
-                f"Maximum {settings.MAX_URLS_PER_TASK} URLs autorisées"
-            )
-        
-        return value
+        try:
+            urls = validate_url_list(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
+        return "\n".join(urls)

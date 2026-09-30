@@ -1,55 +1,95 @@
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import URLValidator
+import re
+
 from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
+# Séparateurs : espaces/retours ligne, ou virgule/point-virgule suivis d'une URL
+# (une virgule à l'intérieur d'une URL est conservée).
+URL_SPLIT_RE = re.compile(r"\s+|[,;](?=\s*https?://)", re.IGNORECASE)
+
+
+def parse_urls(raw: str) -> list[str]:
+    """Découpe le texte saisi (lignes, virgules, espaces) et retire les doublons."""
+    cleaned = (u.strip().rstrip(",;") for u in URL_SPLIT_RE.split(raw or ""))
+    return list(dict.fromkeys(u for u in cleaned if u))
+
 
 class CrawlTask(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'En attente'),
-        ('running', 'En cours'),
-        ('done', 'Terminé'),
-        ('error', 'Erreur'),
-    ]
+    class Status(models.TextChoices):
+        PENDING = "pending", "En attente"
+        RUNNING = "running", "En cours"
+        DONE = "done", "Terminé"
+        ERROR = "error", "Erreur"
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crawl_tasks')
-    urls = models.TextField(help_text="URLs séparées par des virgules ou nouvelles lignes")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    result_file = models.FileField(upload_to='results/%Y/%m/%d/', null=True, blank=True)
-    error_message = models.TextField(blank=True, null=True)
-    
-    # Métadonnées
-    created_at = models.DateTimeField(auto_now_add=True)
+    ACTIVE_STATUSES = (Status.PENDING, Status.RUNNING)
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="crawl_tasks")
+    name = models.CharField("nom", max_length=80, blank=True)
+    urls = models.TextField(help_text="Une URL par ligne")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
+    result_file = models.FileField(upload_to="results/%Y/%m/", null=True, blank=True)
+    error_message = models.TextField(blank=True, default="")
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
+    started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    
-    # Statistiques
-    urls_count = models.IntegerField(default=0)
-    items_scraped = models.IntegerField(default=0)
-    
-    # ID de tâche Celery
-    celery_task_id = models.CharField(max_length=255, blank=True, null=True)
+
+    urls_count = models.PositiveIntegerField(default=0)
+    urls_done = models.PositiveIntegerField(default=0)
+    urls_failed = models.PositiveIntegerField(default=0)
+    items_scraped = models.PositiveIntegerField(default=0)
+
+    celery_task_id = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        ordering = ['-created_at']
-        verbose_name = "Tâche de crawl"
-        verbose_name_plural = "Tâches de crawl"
+        ordering = ["-created_at"]
+        verbose_name = "tâche de crawl"
+        verbose_name_plural = "tâches de crawl"
+        indexes = [models.Index(fields=["user", "-created_at"])]
 
     def __str__(self):
-        return f"Task #{self.id} - {self.user.username} ({self.status})"
-    
+        return f"Tâche #{self.pk} — {self.user} ({self.status})"
+
     def get_urls_list(self):
-        """Retourne la liste des URLs nettoyées"""
-        urls = self.urls.replace(',', '\n').split('\n')
-        return [url.strip() for url in urls if url.strip()]
-    
-    def validate_urls_count(self):
-        """Vérifie que le nombre d'URLs ne dépasse pas la limite"""
-        urls_list = self.get_urls_list()
-        if len(urls_list) > settings.MAX_URLS_PER_TASK:
-            raise ValueError(f"Maximum {settings.MAX_URLS_PER_TASK} URLs autorisées par tâche")
-        return True
-    
+        return parse_urls(self.urls)
+
+    @property
+    def display_name(self):
+        return self.name or f"Mission #{self.pk}"
+
+    @property
+    def is_active(self):
+        return self.status in self.ACTIVE_STATUSES
+
+    @property
+    def progress_percent(self):
+        if self.status == self.Status.DONE:
+            return 100
+        if not self.urls_count:
+            return 0
+        return min(100, round(100 * self.urls_done / self.urls_count))
+
+    @property
+    def duration(self):
+        """Durée d'exécution (timedelta) ou None."""
+        start = self.started_at or self.created_at
+        end = self.completed_at or (timezone.now() if self.status == self.Status.RUNNING else None)
+        if not start or not end:
+            return None
+        return end - start
+
+    @property
+    def duration_display(self):
+        d = self.duration
+        if d is None:
+            return "—"
+        seconds = int(d.total_seconds())
+        h, rem = divmod(seconds, 3600)
+        m, s = divmod(rem, 60)
+        return f"{h:02d}:{m:02d}:{s:02d}"
+
     def save(self, *args, **kwargs):
-        # Calculer le nombre d'URLs
         self.urls_count = len(self.get_urls_list())
         super().save(*args, **kwargs)

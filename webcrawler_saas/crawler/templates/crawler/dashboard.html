@@ -1,154 +1,83 @@
 {% extends 'crawler/base.html' %}
-
-{% block title %}Dashboard - WebCrawler SaaS{% endblock %}
-
+{% block title %}Tableau de bord{% endblock %}
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h2>📊 Dashboard</h2>
-        <p class="text-muted">Bienvenue, {{ user.username }} !</p>
-    </div>
-</div>
+<h1 class="sr-only">Tableau de bord</h1>
+<div class="pause-menu" data-track-ids="{{ active_ids }}" data-endpoint="{% url 'tasks-status' %}">
 
-<!-- Statistiques -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">⏳ En attente</h5>
-                <h2 class="mb-0">{{ pending_count }}</h2>
+  <section class="window area-party" aria-labelledby="missions-title">
+    <h2 class="window__title" id="missions-title">
+      Missions
+      <small>{% if counts.total > tasks|length %}{{ tasks|length }} plus récentes sur {{ counts.total }}{% else %}{{ counts.total }} au total{% endif %}</small>
+    </h2>
+    {% if tasks %}
+      <ul class="roster">
+        {% for task in tasks %}
+          <li class="roster__item" data-task="{{ task.pk }}">
+            <div>
+              <a class="roster__name" href="{% url 'task-detail-web' task.pk %}">{{ task.display_name }}</a>
+              <div class="roster__meta">
+                Créée le {{ task.created_at|date:"d/m à H:i" }}{% if task.urls_failed %}, <span class="status-tag--error">{{ task.urls_failed }} échec{{ task.urls_failed|pluralize }}</span>{% endif %}
+              </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">⚙️ En cours</h5>
-                <h2 class="mb-0">{{ running_count }}</h2>
+            <div class="roster__gauge">{% include 'crawler/_task_gauge.html' %}</div>
+            <div class="roster__actions">
+              {% if task.result_file %}<a class="mini-btn" href="{% url 'task-download' task.pk %}">Télécharger</a>{% endif %}
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">✅ Terminées</h5>
-                <h2 class="mb-0">{{ done_count }}</h2>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
-                <h5 class="card-title">❌ Erreurs</h5>
-                <h2 class="mb-0">{{ error_count }}</h2>
-            </div>
-        </div>
-    </div>
-</div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="roster__empty">Aucune mission pour l'instant. Collez vos premières adresses dans la fenêtre « Nouvelle mission » pour commencer.</p>
+    {% endif %}
+  </section>
 
-<!-- Formulaire de création de tâche -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">🚀 Créer une nouvelle tâche de crawl</h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{% url 'create-task-web' %}">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="urls" class="form-label">URLs à crawler (une par ligne ou séparées par des virgules)</label>
-                        <textarea 
-                            class="form-control" 
-                            id="urls" 
-                            name="urls" 
-                            rows="5" 
-                            placeholder="https://example.com&#10;https://example2.com&#10;https://example3.com"
-                            required
-                        ></textarea>
-                        <div class="form-text">Maximum 25 URLs par tâche</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="me-2">🕷️</span> Lancer le crawl
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+  <nav class="window window--tight area-commands" aria-label="Commandes">
+    <ul class="cursor-list">
+      <li><a href="#nouvelle-mission" class="is-selected">Nouvelle mission</a></li>
+      <li><a href="{% url 'legal' 'utilisation-responsable' %}">Règles du jeu</a></li>
+      <li><a href="{% url 'api-tasks' %}">API</a></li>
+      <li>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Se déconnecter</button></form>
+      </li>
+    </ul>
+  </nav>
 
-<!-- Liste des tâches -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">📋 Mes tâches de crawl</h5>
-            </div>
-            <div class="card-body">
-                {% if tasks %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Statut</th>
-                                    <th>URLs</th>
-                                    <th>Items scrapés</th>
-                                    <th>Créée le</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for task in tasks %}
-                                <tr>
-                                    <td><strong>#{{ task.id }}</strong></td>
-                                    <td>
-                                        <span class="status-badge status-{{ task.status }}">
-                                            {% if task.status == 'pending' %}⏳ En attente
-                                            {% elif task.status == 'running' %}⚙️ En cours
-                                            {% elif task.status == 'done' %}✅ Terminé
-                                            {% elif task.status == 'error' %}❌ Erreur
-                                            {% endif %}
-                                        </span>
-                                    </td>
-                                    <td>{{ task.urls_count }} URL{{ task.urls_count|pluralize }}</td>
-                                    <td>{{ task.items_scraped }}</td>
-                                    <td>{{ task.created_at|date:"d/m/Y H:i" }}</td>
-                                    <td>
-                                        <a href="{% url 'task-detail-web' task.id %}" class="btn btn-sm btn-outline-primary">
-                                            📄 Détails
-                                        </a>
-                                        {% if task.result_file %}
-                                            <a href="{{ task.result_file.url }}" class="btn btn-sm btn-success" download>
-                                                💾 CSV
-                                            </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <p class="text-muted mb-3">Aucune tâche pour le moment</p>
-                        <p>Créez votre première tâche de crawl ci-dessus ! 👆</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+  <aside class="window window--tight area-status" aria-label="Statut">
+    <h2 class="window__title">{{ user.username }}</h2>
+    <dl class="stat-grid">
+      <dt>En attente</dt><dd>{{ counts.pending }}</dd>
+      <dt>En cours</dt><dd>{{ counts.running }}</dd>
+      <dt>Terminées</dt><dd>{{ counts.done }}</dd>
+      <dt>En erreur</dt><dd>{{ counts.error }}</dd>
+      <dt>Actives</dt><dd>{{ counts.pending|add:counts.running }} / {{ max_active }}</dd>
+    </dl>
+    <hr style="border:0;border-top:1px solid rgba(227,230,244,.25);margin:12px 0 8px">
+    <div class="label">Temps</div>
+    <div class="clock" data-clock>--:--:--</div>
+  </aside>
 
-{% block extra_js %}
-<script>
-    // Auto-refresh toutes les 10 secondes si des tâches sont en cours
-    
-    /* {% if running_count > 0 or pending_count > 0 %} */
-    setTimeout(function() {
-        location.reload();
-    }, 10000);
-    /* {% endif %} */
-</script>
+  <section class="window area-launch" id="nouvelle-mission" aria-labelledby="launch-title">
+    <h2 class="window__title" id="launch-title">Nouvelle mission <small id="url-count">0 / {{ MAX_URLS_PER_TASK }} URL</small></h2>
+    <form method="post" action="{% url 'create-task-web' %}" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="form-errors">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <div class="field">
+        <label for="{{ form.urls.id_for_label }}">{{ form.urls.label }}</label>
+        <textarea name="urls" id="{{ form.urls.id_for_label }}" rows="6" spellcheck="false" autocomplete="off"
+                  data-url-counter="url-count" data-max="{{ MAX_URLS_PER_TASK }}"
+                  placeholder="https://exemple.fr/produit-1&#10;https://exemple.fr/produit-2" required>{{ form.urls.value|default:'' }}</textarea>
+        {{ form.urls.errors }}
+        <p class="help">Une adresse par ligne, {{ MAX_URLS_PER_TASK }} maximum. Seules les pages publiques des sites qui l'autorisent seront visitées.</p>
+      </div>
+      <div class="field">
+        <label for="{{ form.name.id_for_label }}">{{ form.name.label }} <span class="dim">(facultatif)</span></label>
+        {{ form.name }}
+        {{ form.name.errors }}
+      </div>
+      <button type="submit" class="btn btn--go">Lancer la mission</button>
+    </form>
+  </section>
+</div>
 {% endblock %}

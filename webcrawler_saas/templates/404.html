@@ -1,0 +1,10 @@
+{% extends 'crawler/base.html' %}
+{% block title %}Page introuvable{% endblock %}
+{% block content %}
+<div class="narrow error-screen"><div class="window">
+  <div class="code">404</div>
+  <h1 class="window__title" style="justify-content:center">Cette page n'existe pas</h1>
+  <p class="dim">L'adresse est peut-être mal saisie, ou la mission a été supprimée.</p>
+  <a class="btn" href="{% url 'home' %}">Revenir à l'accueil</a>
+</div></div>
+{% endblock %}

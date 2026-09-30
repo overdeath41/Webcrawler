@@ -1,0 +1,48 @@
+# WebCrawler SaaS — site nginx de l'hôte (généré par deploy.sh)
+# Publie l'application sur le port 80, directement sur l'IP du serveur.
+# Variables remplacées par deploy.sh : __SERVER_NAMES__, __APP_PORT__, __DEFAULT_SERVER__
+
+upstream webcrawler_app {
+    server 127.0.0.1:__APP_PORT__;
+    keepalive 16;
+}
+
+server {
+    listen 80__DEFAULT_SERVER__;
+    server_name __SERVER_NAMES__;
+
+    access_log /var/log/nginx/webcrawler.access.log;
+    error_log  /var/log/nginx/webcrawler.error.log warn;
+
+    client_max_body_size 1m;
+    server_tokens off;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "same-origin" always;
+    add_header X-Frame-Options "DENY" always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json text/csv image/svg+xml;
+
+    location / {
+        proxy_pass http://webcrawler_app;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;              # écrase toute valeur envoyée par le client
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90s;
+        proxy_redirect off;
+    }
+
+    # Fichiers statiques : servis par WhiteNoise (noms versionnés), on cache côté nginx
+    location /static/ {
+        proxy_pass http://webcrawler_app;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        expires 30d;
+        access_log off;
+    }
+}

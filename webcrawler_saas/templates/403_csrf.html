@@ -1,0 +1,10 @@
+{% extends 'crawler/base.html' %}
+{% block title %}Formulaire expiré{% endblock %}
+{% block content %}
+<div class="narrow error-screen"><div class="window">
+  <div class="code">403</div>
+  <h1 class="window__title" style="justify-content:center">Formulaire expiré</h1>
+  <p class="dim">La page est restée ouverte trop longtemps ou les cookies sont bloqués. Rechargez la page puis recommencez.</p>
+  <a class="btn" href="{% url 'home' %}">Revenir à l'accueil</a>
+</div></div>
+{% endblock %}

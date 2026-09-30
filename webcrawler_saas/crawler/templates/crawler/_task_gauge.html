@@ -1,0 +1,8 @@
+<div class="row">
+  <span class="status-tag status-tag--{{ task.status }}" data-field="status">{{ task.get_status_display }}</span>
+  <span><span data-field="urls_done">{% if task.status == 'done' %}{{ task.urls_count }}{% else %}{{ task.urls_done }}{% endif %}</span>/{{ task.urls_count }}</span>
+</div>
+<div class="gauge{% if task.status == 'running' %} gauge--running{% elif task.status == 'error' %} gauge--error{% elif task.status == 'done' %} gauge--full{% endif %}"
+     style="--value: {% if task.status == 'error' %}100{% else %}{{ task.progress_percent }}{% endif %}%"
+     role="progressbar" aria-label="Progression de {{ task.display_name }}"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ task.progress_percent }}"></div>

@@ -1,179 +1,78 @@
 {% extends 'crawler/base.html' %}
-
-{% block title %}Tâche #{{ task.id }} - WebCrawler SaaS{% endblock %}
-
+{% block title %}{{ task.display_name }}{% endblock %}
 {% block content %}
-<div class="row mb-3">
-    <div class="col">
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-            ← Retour au dashboard
-        </a>
-    </div>
+<div class="status-screen" data-track-ids="{% if task.is_active %}{{ task.pk }}{% endif %}" data-endpoint="{% url 'tasks-status' %}">
+  <div class="status-screen__main" data-task="{{ task.pk }}">
+
+    <section class="window">
+      <h1 class="window__title">{{ task.display_name }} <small>créée le {{ task.created_at|date:"d/m/Y à H:i" }}</small></h1>
+      <div class="hero-stat">
+        <div>
+          <div class="label">Pages visitées</div>
+          <div class="big"><span data-field="urls_done">{% if task.status == 'done' %}{{ task.urls_count }}{% else %}{{ task.urls_done }}{% endif %}</span><small> / {{ task.urls_count }}</small></div>
+        </div>
+        <div class="roster__gauge">{% include 'crawler/_task_gauge.html' %}</div>
+      </div>
+    </section>
+
+    <section class="window">
+      <dl class="stat-grid">
+        <dt>Lignes dans le CSV</dt><dd data-field="items_scraped">{{ task.items_scraped }}</dd>
+        <dt>Pages en échec</dt><dd data-field="urls_failed">{{ task.urls_failed }}</dd>
+        <dt>Durée</dt><dd data-field="duration">{{ task.duration_display }}</dd>
+        {% if task.completed_at %}<dt>Terminée le</dt><dd>{{ task.completed_at|date:"d/m/Y à H:i:s" }}</dd>{% endif %}
+      </dl>
+      {% if task.status == 'done' and task.urls_failed %}
+        <p class="help dim" style="margin:12px 0 0">Le détail de chaque échec (robots.txt, page introuvable, délai dépassé…) figure dans la colonne « error » du CSV.</p>
+      {% endif %}
+      {% if task.error_message %}
+        <h2 style="margin-top:16px">Ce qui s'est passé</h2>
+        <pre class="error-box">{{ task.error_message }}</pre>
+      {% endif %}
+    </section>
+
+    <section class="window">
+      <h2 class="window__title">Adresses de la mission <small>{{ task.urls_count }}</small></h2>
+      <ol class="url-list">
+        {% for url in task.get_urls_list %}
+          <li><span>{{ forloop.counter }}</span><a href="{{ url }}" target="_blank" rel="noopener noreferrer nofollow">{{ url }}</a></li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <div class="status-screen__side">
+    <nav class="window window--tight" aria-label="Actions sur la mission">
+      <ul class="cursor-list">
+        {% if task.result_file %}
+          <li><a href="{% url 'task-download' task.pk %}" class="is-selected">Télécharger le CSV<small>Séparateur « ; », prêt pour Excel</small></a></li>
+        {% endif %}
+        {% if not task.is_active %}
+          <li>
+            <form method="post" action="{% url 'task-relaunch' task.pk %}">{% csrf_token %}
+              <button type="submit"{% if not task.result_file %} class="is-selected"{% endif %}>Relancer<small>Nouvelle mission, mêmes adresses</small></button>
+            </form>
+          </li>
+        {% endif %}
+        <li><a href="{% url 'dashboard' %}"{% if task.is_active %} class="is-selected"{% endif %}>Retour aux missions</a></li>
+        {% if task.status != 'running' %}
+          <li>
+            <form method="post" action="{% url 'task-delete' task.pk %}" data-confirm="Supprimer définitivement cette mission et son fichier ?">{% csrf_token %}
+              <button type="submit" class="danger">Supprimer</button>
+            </form>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% if task.is_active %}
+      <div class="window window--tight">
+        <p style="margin:0" class="dim">La jauge avance toute seule : inutile de recharger la page. Comptez environ {{ CRAWL_DELAY|floatformat:"-1" }} à 5 secondes par adresse.</p>
+      </div>
+    {% elif task.result_file %}
+      <div class="window window--tight">
+        <p style="margin:0" class="dim">Le fichier est conservé {{ RESULT_RETENTION_DAYS }} jours après la création de la mission, puis supprimé automatiquement.</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
-
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">📄 Détails de la tâche #{{ task.id }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Statut:</strong>
-                        <span class="status-badge status-{{ task.status }} ms-2">
-                            {% if task.status == 'pending' %}⏳ En attente
-                            {% elif task.status == 'running' %}⚙️ En cours
-                            {% elif task.status == 'done' %}✅ Terminé
-                            {% elif task.status == 'error' %}❌ Erreur
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Utilisateur:</strong> {{ task.user.username }}
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Créée le:</strong> {{ task.created_at|date:"d/m/Y à H:i:s" }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Mise à jour:</strong> {{ task.updated_at|date:"d/m/Y à H:i:s" }}
-                    </div>
-                </div>
-
-                {% if task.completed_at %}
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <strong>Terminée le:</strong> {{ task.completed_at|date:"d/m/Y à H:i:s" }}
-                    </div>
-                </div>
-                {% endif %}
-
-                <hr>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Nombre d'URLs:</strong> {{ task.urls_count }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Items scrapés:</strong> {{ task.items_scraped }}
-                    </div>
-                </div>
-
-                {% if task.celery_task_id %}
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <strong>Celery Task ID:</strong> 
-                        <code class="text-muted">{{ task.celery_task_id }}</code>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if task.error_message %}
-                <div class="alert alert-danger mt-3">
-                    <strong>Erreur:</strong><br>
-                    {{ task.error_message }}
-                </div>
-                {% endif %}
-
-                {% if task.result_file %}
-                <div class="mt-4">
-                    <a href="{{ task.result_file.url }}" class="btn btn-success btn-lg" download>
-                        💾 Télécharger les résultats (CSV)
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- URLs crawlées -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">🔗 URLs à crawler ({{ task.urls_count }})</h5>
-            </div>
-            <div class="card-body">
-                <div class="list-group">
-                    {% for url in task.get_urls_list %}
-                    <div class="list-group-item">
-                        <small class="text-muted me-2">{{ forloop.counter }}.</small>
-                        <a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <!-- Statistiques -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">📊 Statistiques</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>URLs totales:</span>
-                        <strong>{{ task.urls_count }}</strong>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>Items scrapés:</span>
-                        <strong>{{ task.items_scraped }}</strong>
-                    </div>
-                </div>
-                {% if task.completed_at and task.created_at %}
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>Durée:</span>
-                        <strong>
-                            {% widthratio task.completed_at.timestamp|add:"-"|add:task.created_at.timestamp 1 60|floatformat:0 %} min
-                        </strong>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">⚡ Actions</h5>
-            </div>
-            <div class="card-body">
-                {% if task.status == 'running' or task.status == 'pending' %}
-                <div class="alert alert-info mb-3">
-                    <small>La tâche est en cours. La page se rafraîchira automatiquement.</small>
-                </div>
-                {% endif %}
-                
-                <a href="{% url 'dashboard' %}" class="btn btn-outline-primary w-100 mb-2">
-                    📊 Retour au dashboard
-                </a>
-                
-                {% if task.result_file %}
-                <a href="{{ task.result_file.url }}" class="btn btn-success w-100 mb-2" download>
-                    💾 Télécharger CSV
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Auto-refresh si la tâche est en cours
-
-    /* {% if task.status in ('running', 'pending') %} */
-    setTimeout(function() {
-        location.reload();
-    }, 5000);
-    /* {% endif %} */
-</script>
-
 {% endblock %}

@@ -1,74 +1,32 @@
 {% extends 'crawler/base.html' %}
-
-{% block title %}Inscription - WebCrawler SaaS{% endblock %}
-
+{% block title %}Créer un compte{% endblock %}
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">📝 Créer un compte</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">Nom d'utilisateur</label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-danger">{{ form.username.errors }}</div>
-                        {% endif %}
-                        {% if form.username.help_text %}
-                            <div class="form-text">{{ form.username.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password1.id_for_label }}" class="form-label">Mot de passe</label>
-                        {{ form.password1 }}
-                        {% if form.password1.errors %}
-                            <div class="text-danger">{{ form.password1.errors }}</div>
-                        {% endif %}
-                        {% if form.password1.help_text %}
-                            <div class="form-text">{{ form.password1.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmer le mot de passe</label>
-                        {{ form.password2 }}
-                        {% if form.password2.errors %}
-                            <div class="text-danger">{{ form.password2.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
-                        </div>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary w-100">Créer mon compte</button>
-                </form>
-                <hr>
-                <p class="text-center mb-0">
-                    Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="narrow">
+  <form method="post" class="window" novalidate>
+    {% csrf_token %}
+    <h1 class="window__title">Créer un compte</h1>
 
-<style>
-    #id_username, #id_password1, #id_password2 {
-        width: 100%;
-        padding: 0.375rem 0.75rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #fff;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    .form-text, .helptext {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-</style>
+    {% if form.non_field_errors %}
+      <ul class="form-errors">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% for field in form %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {{ field.errors }}
+        {% if field.name == 'password1' %}
+          <p class="help">Au moins 10 caractères, pas uniquement des chiffres, et différent de votre nom d'utilisateur.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn--go">Créer mon compte</button>
+    <p class="form-foot">
+      En créant un compte, vous acceptez les <a href="{% url 'legal' 'cgu' %}">CGU</a> et la
+      <a href="{% url 'legal' 'confidentialite' %}">politique de confidentialité</a>.
+      Déjà inscrit ? <a href="{% url 'login' %}">Se connecter</a>
+    </p>
+  </form>
+</div>
 {% endblock %}

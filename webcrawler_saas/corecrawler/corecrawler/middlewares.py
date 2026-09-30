@@ -1,75 +1,29 @@
-from scrapy import signals
-import random
+from scrapy.exceptions import IgnoreRequest
+
+from netguard import BlockedURL, check_url
 
 
-class CorecrawlerSpiderMiddleware:
-    """Spider middleware pour gérer les réponses"""
-    
+class SSRFGuardMiddleware:
+    """
+    Refuse toute requête vers une cible non publique.
+    Placé très tôt : s'applique aussi aux redirections (re-planifiées par
+    Scrapy) et aux requêtes robots.txt.
+    """
+
+    def __init__(self, allowed_ports):
+        self.allowed_ports = allowed_ports
+
     @classmethod
     def from_crawler(cls, crawler):
-        s = cls()
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
+        raw = crawler.settings.get("WC_ALLOWED_PORTS", "80,443,8080,8443")
+        ports = {int(p) for p in str(raw).split(",") if p.strip()}
+        return cls(ports)
 
-    def process_spider_input(self, response, spider):
-        return None
-
-    def process_spider_output(self, response, result, spider):
-        for i in result:
-            yield i
-
-    def process_spider_exception(self, response, exception, spider):
-        pass
-
-    def process_start_requests(self, start_requests, spider):
-        for r in start_requests:
-            yield r
-
-    def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
-
-
-class CorecrawlerDownloaderMiddleware:
-    """Downloader middleware pour gérer les requêtes"""
-    
-    @classmethod
-    def from_crawler(cls, crawler):
-        s = cls()
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
-
-    def process_request(self, request, spider):
-        return None
-
-    def process_response(self, request, response, spider):
-        return response
-
-    def process_exception(self, request, exception, spider):
-        pass
-
-    def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
-
-
-class RandomUserAgentMiddleware:
-    """Middleware pour randomiser les User-Agents"""
-    
-    def __init__(self):
-        self.user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        ]
-    
-    def process_request(self, request, spider):
-        request.headers['User-Agent'] = random.choice(self.user_agents)
-
-
-class RetryWithDifferentProxyMiddleware:
-    """Middleware pour réessayer avec des délais différents en cas d'erreur"""
-    
-    def process_exception(self, request, exception, spider):
-        spider.logger.warning(f'Exception sur {request.url}: {exception}')
+    def process_request(self, request, spider=None):
+        try:
+            # resolve=False : la résolution est contrôlée par SafeResolver au
+            # moment de la connexion ; ici on bloque schéma, port, IP littérales.
+            check_url(request.url, allowed_ports=self.allowed_ports, resolve=False)
+        except BlockedURL as exc:
+            raise IgnoreRequest(f"wc-blocked: {exc}") from exc
         return None
