@@ -1,0 +1,370 @@
+Projet : Deal Scanner
+Vision
+
+Détecter automatiquement les annonces sous-évaluées sur les marketplaces et attribuer un score d'opportunité afin :
+
+d'effectuer de l'achat/revente personnel ;
+d'alimenter un canal Telegram/Discord ;
+à terme proposer un abonnement premium aux revendeurs, collectionneurs et chasseurs de bonnes affaires.
+Objectif principal
+
+Transformer les annonces publiques en signaux exploitables.
+
+Actuellement :
+
+Plain Text
+LeBonCoin
+↓
+L'utilisateur passe 2h à chercher
+↓
+Il trouve parfois une bonne affaire
+
+Objectif :
+
+Plain Text
+Crawler
+↓
+Analyse
+↓
+Scoring
+↓
+Notification
+↓
+Bonne affaire identifiée en quelques secondes
+Proposition de valeur
+
+L'utilisateur ne paie pas pour voir des annonces.
+
+Il paie pour :
+
+gagner du temps ;
+filtrer le bruit ;
+recevoir uniquement les opportunités ;
+être alerté avant les autres.
+Modèle économique envisagé
+Phase 1
+
+Usage personnel.
+
+Objectif :
+
+Plain Text
+Détecter des bonnes affaires pour soi-même.
+Phase 2
+
+Discord / Telegram privé.
+
+Exemple :
+
+Plain Text
+5 €/mois
+
+pour recevoir les alertes.
+
+Phase 3
+
+SaaS
+
+Formule gratuite :
+
+Plain Text
+3 alertes / jour
+
+Formule premium :
+
+Plain Text
+Alertes illimitées
+Historique
+Score détaillé
+Personnalisation catégories
+État actuel
+Disponible
+Infrastructure de crawling
+
+✅ Application de crawl déjà fonctionnelle.
+
+✅ Système d'automatisation existant.
+
+✅ Capacité de collecte des données.
+
+Idées validées
+
+✅ Détection de sous-évaluation.
+
+✅ Utilisation de données réelles de marché.
+
+✅ Notification automatique.
+
+✅ Catégorisation des offres.
+
+MVP (version minimale)
+Étape 1
+
+Crawler :
+
+Plain Text
+LeBonCoin
+
+Catégories :
+
+Plain Text
+GPU
+CPU
+RAM
+MacBook
+iPhone
+Étape 2
+
+Extraction :
+
+JSON
+{
+"titre": "",
+"prix": "",
+"description": "",
+"date": "",
+"url": ""
+}
+Étape 3
+
+Normalisation
+
+Exemple :
+
+Plain Text
+RTX 4070
+
+doit devenir :
+
+Plain Text
+NVIDIA RTX 4070
+
+Peu importe la manière dont le vendeur l'écrit.
+
+Étape 4
+
+Calcul du prix de référence
+
+Exemple :
+
+Plain Text
+Prix annoncé : 350 €
+
+Prix moyen observé :
+
+Plain Text
+520 €
+
+Décote :
+
+Plain Text
+-32 %
+Étape 5
+
+Scoring
+
+Proposition :
+
+Plain Text
+0 à 40 = Mauvaise affaire
+ 
+40 à 60 = Prix correct
+ 
+60 à 80 = Bonne affaire
+ 
+80 à 100 = Excellente affaire
+Algorithme de score V1
+Décote
+
+40 %
+
+Plain Text
+Prix marché
+vs
+Prix annonce
+Demande
+
+20 %
+
+Exemple :
+
+Plain Text
+RTX 4070
+forte demande
+Liquidité
+
+20 %
+
+Temps moyen de revente.
+
+État
+
+10 %
+
+Neuf Très bon état Bon état Usé
+
+Score associé.
+
+Fiabilité vendeur
+
+10 %
+
+Basé sur :
+
+ancienneté ;
+qualité annonce ;
+photos ;
+description.
+Version V2
+
+Historisation.
+
+Stocker :
+
+Plain Text
+Produit
+Prix
+Date publication
+Date disparition
+ 
+
+Objectif :
+
+Plain Text
+Apprendre les prix réels du marché.
+ 
+Base de données cible
+
+Annonce :
+
+SQL
+ID
+Titre
+Description
+Prix
+Catégorie
+Date
+URL
+Marketplace
+Score
+
+Produit :
+
+SQL
+ID
+Nom normalisé
+Catégorie
+Prix moyen
+Prix médian
+Volume observé
+Version V3
+
+Notifications
+
+Telegram.
+
+Exemple :
+
+Plain Text
+⭐⭐⭐⭐⭐ 91/100
+ 
+RTX 4070
+ 
+Prix : 350 €
+ 
+Valeur estimée : 520 €
+ 
+Décote : -32 %
+ 
+URL :
+...
+ 
+Version V4
+
+Filtrage utilisateur
+
+Exemple :
+
+Plain Text
+☑ GPU
+☑ CPU
+☑ Apple
+ 
+☐ Mobilier
+☐ Automobile
+☐ Vêtements
+Extensions futures
+Intelligence artificielle
+
+Analyse automatique :
+
+du texte ;
+des photos ;
+de la cohérence de l'annonce.
+
+Exemple :
+
+Plain Text
+Annonce prétend être une RTX 4080
+ 
+Photo montre une RTX 3070
+ 
+→ score réduit
+Arbitrage géographique
+
+Comparer :
+
+Plain Text
+LeBonCoin
+Marketplace
+eBay
+Kleinanzeigen
+
+afin de détecter :
+
+Plain Text
+Prix FR
+vs
+Prix DE
+Calcul de profit automatique
+Plain Text
+Prix achat : 350 €
+ 
+Prix revente estimé : 500 €
+ 
+Frais : 30 €
+ 
+Profit estimé : 120 €
+Indicateur de réussite
+
+Premier objectif :
+
+Plain Text
+Le système détecte
+au moins 1 vraie bonne affaire
+par semaine.
+
+Deuxième objectif :
+
+Plain Text
+Le système permet
+une opération rentable
+d'achat / revente.
+
+Troisième objectif :
+
+Plain Text
+10 utilisateurs actifs.
+ 
+
+Quatrième objectif :
+
+Plain Text
+Premier euro gagné grâce au logiciel.
+Principe directeur
+
+Ne pas chercher à construire un SaaS complet dès le départ.
+
+Construire d'abord un outil qui me fait personnellement gagner de l'argent.
+
+Si je gagne moi-même de l'argent grâce à l'outil, il devient vendable.
